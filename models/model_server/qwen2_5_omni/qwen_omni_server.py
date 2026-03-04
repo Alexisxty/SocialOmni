@@ -28,19 +28,19 @@ if not logger.handlers:
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-# 简化的系统提示词
+# Simplified system prompt
 SYSTEM_PROMPT = "You are Qwen, a virtual human developed by the Qwen Team, Alibaba Group, capable of perceiving auditory and visual inputs, as well as generating text and speech."
 
-# 全局配置
+# Global configuration
 MODEL_PATH = CONFIG.model("qwen2_5_omni").get("model_path") or "/publicssd/xty/models/Qwen2.5-Omni-7B"
 USE_AUDIO_IN_VIDEO = CONFIG.model("qwen2_5_omni").get("use_audio_in_video", True)
 MAX_TOKENS = CONFIG.model("qwen2_5_omni").get("max_tokens", 50)
 TEMPERATURE = CONFIG.model("qwen2_5_omni").get("temperature", 0.1)
 
-# GPU配置 - 支持环境变量和命令行参数
+# GPU configuration - supports environment variables and CLI arguments
 def get_gpu_id():
-    """获取GPU编号，优先级：命令行参数 > 环境变量 > 默认值0"""
-    # 首先检查环境变量
+    """Resolve GPU ID, priority: CLI argument > environment variable > default."""
+    # Check environment variable first.
     gpu_id = os.environ.get('CUDA_VISIBLE_DEVICES')
     if gpu_id is not None:
         try:
@@ -55,7 +55,7 @@ def get_gpu_id():
         return int(runtime_gpus[0])
     return 5
 
-# 全局变量
+# Global variables
 gpu_id = get_gpu_id()
 model = None
 processor = None
@@ -74,14 +74,14 @@ def _parse_bool(value, default=True):
 
 
 def load_model():
-    """加载模型到指定GPU"""
+    """Load model onto specified GPU"""
     global model, processor, model_loaded, gpu_id
 
     if model_loaded:
         return
 
     try:
-        print(f"Loading model到GPU {gpu_id}...")
+        print(f"Loading model on GPU {gpu_id}...")
         model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
             MODEL_PATH,
             torch_dtype=torch.float16,
@@ -96,7 +96,7 @@ def load_model():
 
 
 def build_conversation(video_path, question):
-    """构建对话格式"""
+    """Build conversation format"""
     return [
         {
             "role": "system",
@@ -115,14 +115,14 @@ def build_conversation(video_path, question):
 
 
 def process_video_analysis(video_path, question, use_video, use_audio):
-    """处理视频分析"""
+    """Process video analysis"""
     global model, processor
     use_audio_in_video = USE_AUDIO_IN_VIDEO and use_audio
     
-    # 构建对话
+    # Build conversation
     conversation = build_conversation(video_path, question)
     
-    # 准备输入
+    # Prepare inputs
     text = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
     audios, images, videos = process_mm_info(conversation, use_audio_in_video=use_audio_in_video)
     if not use_audio:
@@ -143,7 +143,7 @@ def process_video_analysis(video_path, question, use_video, use_audio):
     )
     inputs = inputs.to(model.device).to(model.dtype)
 
-    # 推理 - 添加max_tokens限制
+    # Inference with max_tokens limit
     text_ids, _ = model.generate(
         **inputs, 
         use_audio_in_video=use_audio_in_video,
@@ -162,7 +162,7 @@ def process_video_analysis(video_path, question, use_video, use_audio):
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """健康检查接口"""
+    """Health check endpoint"""
     return jsonify({
         "status": "ok", 
         "model_loaded": model_loaded,
@@ -172,39 +172,39 @@ def health_check():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_video():
-    """分析视频接口 - 只支持文件上传方式"""
+    """Analyze video endpoint - file upload only"""
     global model, processor
     
     if not model_loaded:
-        return jsonify({"error": "模型未加载"}), 500
+        return jsonify({"error": "Model is not loaded"}), 500
     
     temp_dir = None
     temp_path = None
     
     try:
-        # 只支持文件上传方式
+        # File upload only
         if 'video' not in request.files:
-            return jsonify({"error": "未上传视频文件"}), 400
+            return jsonify({"error": "Video file not uploaded"}), 400
             
         video_file = request.files['video']
         if video_file.filename == '':
-            return jsonify({"error": "未选择文件"}), 400
+            return jsonify({"error": "No file selected"}), 400
             
         question = request.form.get('question', '')
         use_video = _parse_bool(request.form.get("use_video"), True)
         use_audio = _parse_bool(request.form.get("use_audio"), USE_AUDIO_IN_VIDEO)
         if not question.strip():
-            return jsonify({"error": "问题不能为空"}), 400
+            return jsonify({"error": "Question cannot be empty"}), 400
             
-        # 保存上传的文件到临时目录
+        # Save uploaded file to temporary directory
         temp_dir = tempfile.mkdtemp()
         temp_path = os.path.join(temp_dir, video_file.filename)
         video_file.save(temp_path)
         
-        # 处理视频分析
+        # Process video analysis
         answer = process_video_analysis(temp_path, question, use_video, use_audio)
         
-        # 简化的响应格式
+        # Simplified response format
         return jsonify({
             "status": "success", 
             "answer": answer.strip()
@@ -218,7 +218,7 @@ def analyze_video():
         }), 500
         
     finally:
-        # 清理临时文件
+        # Clean temporary files
         try:
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
@@ -229,7 +229,7 @@ def analyze_video():
 
 
 def parse_args():
-    """解析命令行参数"""
+    """Parse command-line arguments"""
     default_host = CONFIG.model("qwen2_5_omni").get("host") or "127.0.0.1"
     default_port = CONFIG.model("qwen2_5_omni").get("port") or 5089
     parser = argparse.ArgumentParser(description="Qwen Omni Video Analysis Server")
@@ -237,38 +237,38 @@ def parse_args():
         "--gpu-id", 
         type=int, 
         default=None,
-        help="指定GPU编号 (默认: 0，或通过CUDA_VISIBLE_DEVICES环境变量指定)"
+        help="Specify GPU ID (default: 0, or set via CUDA_VISIBLE_DEVICES)"
     )
     parser.add_argument(
         "--port", 
         type=int, 
         default=default_port,
-        help="服务器端口 (默认: 5089)"
+        help="Server port (default: 5089)"
     )
     parser.add_argument(
         "--host", 
         default=default_host,
-        help="服务器主机地址 (默认: 127.0.0.1)"
+        help="Server host address (default: 127.0.0.1)"
     )
     return parser.parse_args()
 
 
 if __name__ == '__main__':
-    # 解析命令行参数
+    # Parse command-line arguments
     args = parse_args()
     
-    # 更新GPU编号（如果通过命令行指定）
+    # Update GPU ID if provided via CLI.
     if args.gpu_id is not None:
         gpu_id = args.gpu_id
-        # 设置环境变量
+        # Set environment variable.
         os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
-        print(f"通过命令行参数设置Using GPU {gpu_id}")
+        print(f"Using GPU from command-line argument {gpu_id}")
     else:
-        print(f"Using GPU {gpu_id} (通过环境变量或默认值)")
+        print(f"Using GPU {gpu_id} (from env var or default)")
     
-    # 启动时加载模型
+    # Load model on startup.
     load_model()
     
-    # 启动服务器
+    # Start server.
     print(f"Starting server: {args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False)

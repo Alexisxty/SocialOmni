@@ -1,1 +1,1 @@
-"""模型共享工具与复用逻辑（预留）。"""
+"""Shared model utilities and reusable logic (reserved)."""

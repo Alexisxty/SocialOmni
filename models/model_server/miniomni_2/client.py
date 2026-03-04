@@ -26,7 +26,7 @@ class MiniOmni2Client:
             use_audio = bool(request.metadata.get("use_audio", True))
 
         if not server_url:
-            raise ValueError("缺少 MiniOmni2 server_url，请在 config/config.yaml 或环境变量中配置。")
+            raise ValueError("Missing MiniOmni2 server_url. Please configure it in config/config.yaml or environment variables.")
 
         client = OmniHttpClient(server_url)
         raw_answer = client.call_api(

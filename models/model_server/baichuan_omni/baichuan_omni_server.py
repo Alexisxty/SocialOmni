@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
 
-# 在导入 torch 前设置 GPU 可见性
+# Set GPU visibility before importing torch
 PHYSICAL_GPUS = CONFIG.model("baichuan_omni_1_5").get("gpu_ids", []) or CONFIG.runtime("gpu_ids", [])
 if PHYSICAL_GPUS:
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, PHYSICAL_GPUS))
@@ -34,9 +34,23 @@ MODEL_PATH = CONFIG.model("baichuan_omni_1_5").get("model_path") or "/publicssd/
 MAX_NEW_TOKENS = CONFIG.model("baichuan_omni_1_5").get("max_tokens", 256)
 TEMPERATURE = CONFIG.model("baichuan_omni_1_5").get("temperature", 0.3)
 TOP_P = 1.0
-MAX_FRAME_NUM = int(
-    os.getenv("BAICHUAN_OMNI_MAX_FRAME_NUM", str(CONFIG.runtime("max_frames", 8)))
-)
+
+
+def _parse_max_frame_num() -> int:
+    raw = os.getenv("BAICHUAN_OMNI_MAX_FRAME_NUM")
+    if raw is None:
+        raw = CONFIG.runtime("max_frames", 8)
+    text = str(raw).strip().lower()
+    if text in {"", "none", "null"}:
+        return 8
+    try:
+        value = int(float(text))
+    except (TypeError, ValueError):
+        return 8
+    return max(1, value)
+
+
+MAX_FRAME_NUM = _parse_max_frame_num()
 MAX_TIME = float(os.getenv("BAICHUAN_OMNI_MAX_TIME", "30"))
 
 DEFAULT_SYSTEM_PROMPT = "You are a helpful and precise multimodal assistant."
@@ -57,7 +71,7 @@ def _load_model_classes(model_path: str):
     if model_code_path.exists():
         if str(model_code_path) not in sys.path:
             sys.path.insert(0, str(model_code_path))
-        # 防止已加载到 baichuan_omni_lib 的 model 被复用
+        # Prevent reusing a previously loaded model from baichuan_omni_lib.
         for key in list(sys.modules.keys()):
             if key == "model" or key.startswith("model."):
                 del sys.modules[key]
@@ -101,7 +115,7 @@ def load_model():
     from transformers.utils import logging as hf_logging
 
     if not torch.cuda.is_available():
-        raise RuntimeError("CUDA 不可用，Baichuan-Omni-1.5 仅支持 GPU 推理。")
+        raise RuntimeError("CUDA is not available. Baichuan-Omni-1.5 only supports GPU inference.")
 
     hf_logging.set_verbosity_error()
 
@@ -272,6 +286,11 @@ def run_inference(video_path: str, question: str, use_video: bool) -> str:
         del ret, output, input_ids, attention_mask, audios, images, videos
     torch.cuda.empty_cache()
     return result
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "model_loaded": bool(model_loaded)}), 200
 
 
 @app.route("/analyze", methods=["POST"])

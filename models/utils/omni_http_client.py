@@ -9,7 +9,7 @@ import requests
 
 
 class OmniHttpClient:
-    """最简HTTP客户端：上传视频 + 问题，返回清理后的答案。"""
+    """Minimal HTTP client: upload video + question, return cleaned answer."""
 
     def __init__(self, server_url: str) -> None:
         self.server_url = server_url.rstrip("/")

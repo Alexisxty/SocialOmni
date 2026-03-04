@@ -1,6 +1,9 @@
 # Python-generated files
 __pycache__/
+**/__pycache__/
 *.py[oc]
+*.pyd
+*.so
 build/
 dist/
 wheels/
@@ -8,6 +11,7 @@ wheels/
 
 # Virtual environments
 .venv
+.python-version
 
 # Local env
 .env
@@ -19,8 +23,20 @@ config/.env.*
 /data/*
 !/data/README.md
 /results/*
+!/results/.gitkeep
+
+# Paper project (local only)
+/ECCV2026_Tianyu/
+
+# Temporary/local experiment dirs
+/temp/
+/d/
+/append/
+run_benchmark_level3.py
+command.md
 
 # Tools
+/tools/
 /tools/*
 
 # Spec workflow
@@ -31,12 +47,30 @@ config/.env.*
 *.tmp
 *.temp
 *.swp
+*.swo
 .cache/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
+.ipynb_checkpoints/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
 
 # Editor/OS
 .DS_Store

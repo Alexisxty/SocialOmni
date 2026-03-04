@@ -1,4 +1,4 @@
-"""模型层统一入口。"""
+"""Unified entrypoint for the model layer."""
 
 from models.pipeline import InferenceRequest, InferenceResult
 

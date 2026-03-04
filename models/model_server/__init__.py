@@ -1,4 +1,4 @@
-"""模型服务与本地推理实现。"""
+"""Model servers and local inference implementations."""
 
 from .clients import CLIENTS, create_client
 

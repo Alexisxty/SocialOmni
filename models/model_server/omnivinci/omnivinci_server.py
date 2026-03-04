@@ -168,17 +168,17 @@ def health_check():
 @app.route("/analyze", methods=["POST"])
 def analyze_video():
     if "video" not in request.files:
-        return jsonify({"error": "未上传视频文件"}), 400
+        return jsonify({"error": "Video file not uploaded"}), 400
 
     video_file = request.files["video"]
     if video_file.filename == "":
-        return jsonify({"error": "未选择文件"}), 400
+        return jsonify({"error": "No file selected"}), 400
 
     question = request.form.get("question", "")
     use_video = _parse_bool(request.form.get("use_video"), True)
     use_audio = _parse_bool(request.form.get("use_audio"), LOAD_AUDIO_IN_VIDEO)
     if not question.strip():
-        return jsonify({"error": "问题不能为空"}), 400
+        return jsonify({"error": "Question cannot be empty"}), 400
 
     temp_dir = None
     temp_path = None
@@ -204,8 +204,8 @@ def analyze_video():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="OmniVinci Video Analysis Server")
-    parser.add_argument("--port", type=int, default=5091, help="服务器端口 (默认: 5091)")
-    parser.add_argument("--host", default="0.0.0.0", help="服务器主机地址 (默认: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=5091, help="Server port (default: 5091)")
+    parser.add_argument("--host", default="0.0.0.0", help="Server host address (default: 0.0.0.0)")
     return parser.parse_args()
 
 

@@ -6,7 +6,7 @@ from .types import InferenceRequest, InferenceResult
 
 
 class ModelClient(Protocol):
-    """Pipeline 统一调用的模型客户端接口。"""
+    """Unified model client interface used by the pipeline."""
 
     @property
     def model_name(self) -> str:

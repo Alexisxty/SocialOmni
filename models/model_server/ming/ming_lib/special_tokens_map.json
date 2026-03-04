@@ -1,0 +1,44 @@
+{
+  "additional_special_tokens": [
+    "<|arithmetic_end|>",
+    "<role>",
+    "<|number_end|>",
+    "<|arithmetic_start|>",
+    "</role>",
+    "<|number_start|>",
+    "<|role_end|>",
+    "<tool_call>",
+    "</tool_call>",
+    "<tool_response>",
+    "</tool_response>"
+  ],
+  "bos_token": {
+    "content": "<|startoftext|>",
+    "lstrip": false,
+    "normalized": false,
+    "rstrip": false,
+    "single_word": false
+  },
+  "cls_token": {
+    "content": "[CLS]",
+    "lstrip": false,
+    "normalized": false,
+    "rstrip": false,
+    "single_word": false
+  },
+  "eos_token": {
+    "content": "<|role_end|>",
+    "lstrip": false,
+    "normalized": false,
+    "rstrip": false,
+    "single_word": false
+  },
+  "gmask_token": {
+    "content": "[gMASK]",
+    "lstrip": false,
+    "normalized": false,
+    "rstrip": false,
+    "single_word": false
+  },
+  "pad_token": "<|role_end|>"
+}

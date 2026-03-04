@@ -1,5 +1,5 @@
 [project]
-name = "v-sync"
+name = "socialomni-benchmark"
 version = "0.1.0"
 description = "A benchmark framework for evaluating native joint reasoning in omni-modal models"
 readme = "README.md"
@@ -8,8 +8,8 @@ dependencies = [
     "torch==2.7.1",
     "torchvision==0.22.1",
     "torchaudio==2.7.1",
-    "transformers",
-    "accelerate>=1.9.0",
+    "transformers==4.57.1",
+    "accelerate==0.34.2",
     "triton==3.3.1",
     "xformers>=0.0.29.post3",
     "timm>=1.0.20",
@@ -21,6 +21,7 @@ dependencies = [
     "librosa>=0.11.0",
     "soundfile>=0.13.1",
     "opencv-python>=4.12.0.88",
+    "numpy>=2,<2.3.0",
     "moviepy>=2.2.1",
     "decord>=0.6.0",
     "pandas>=2.3.1",
@@ -59,20 +60,11 @@ dependencies = [
 ]
 
 [[tool.uv.index]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl"
-explicit = true
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
 
 [tool.uv.sources]
-torch = [
-  { index = "pytorch", marker = "sys_platform == 'linux'" },
-]
-torchvision = [
-  { index = "pytorch", marker = "sys_platform == 'linux'" },
-]
-torchaudio = [
-  { index = "pytorch", marker = "sys_platform == 'linux'" },
-]
 transformers = { git = "https://github.com/huggingface/transformers" }
 s2wrapper = { git = "https://github.com/bfshi/scaling_on_scales.git" }
 clip = { git = "https://github.com/openai/CLIP.git" }

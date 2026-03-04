@@ -1,229 +1,198 @@
-# V-SYNC: Perceiving When to Speak, A Diagnostic Benchmark for Omni Models
+# SocialOmni: Benchmarking Audio-Visual Social Interactivity in Omni Models
 
-![V-SYNC Hero](docs/assets/hero.svg)
+<p align="center">
+  <img src="docs/assets/hero.svg" alt="SocialOmni Hero" width="100%" />
+</p>
 
-English | [中文](docs/README.zh-CN.md)
+<p align="center">
+  <a href="https://github.com/Alexisxty/SocialOmni">GitHub</a>
+  ·
+  <a href="#quick-start">Quick Start</a>
+  ·
+  <a href="#benchmark-overview">Benchmark Overview</a>
+  ·
+  <a href="#evaluation-protocol">Evaluation Protocol</a>
+</p>
 
-> A diagnostic benchmark that asks a simple but brutal question: **does your Omni model know *when* to speak?**
+SocialOmni is a benchmark for **audio-visual social interactivity** in omni models.
+Instead of only measuring answer correctness, SocialOmni explicitly evaluates the interaction triad:
 
-V-SYNC evaluates synchronized **audio-visual temporal grounding** rather than late fusion. Tasks are built so that **single-modality shortcuts fail**; only a native, unified perception stack can consistently answer correctly.
+- **Who** is speaking (speaker identification)
+- **When** interruption is appropriate (timing decision)
+- **How** to respond naturally (interruption generation)
 
-This repository is a production-ready refactor based on the original AV-SyncBench/omni_benchmark project, and **shares the same evaluation results and task philosophy**, while standardizing configuration, model servers, and pipeline entrypoints for release.
+This repository contains the benchmark pipeline, model clients/servers, and reproducible evaluation scripts.
 
-Full Chinese documentation: `docs/README.zh-CN.md`.
+## Why SocialOmni
 
----
+Most multimodal benchmarks are understanding-centric (static QA, final-answer accuracy).
+SocialOmni targets a different bottleneck: whether a model can behave correctly in dynamic dialogue turn-taking.
 
-## Table of Contents
+In real-time interaction, user experience depends on both semantic correctness and social timing.
+A correct content answer can still fail if the model interrupts too early/too late or responds unnaturally.
 
-- [Why V-SYNC](#why-v-sync)
-- [Design Philosophy](#design-philosophy)
-- [Benchmark Results](#benchmark-results)
-- [System Overview](#system-overview)
-- [Quick Start](#quick-start)
-  - [Prerequisites](#prerequisites)
-  - [Configuration](#configuration)
-- [Run Local Model Servers](#run-local-model-servers)
-- [Benchmark (Level1)](#benchmark-level1)
-- [Modality Ablation](#modality-ablation)
-- [Configuration Map](#configuration-map)
-- [Project Layout](#project-layout)
-- [Level2 / Level3](#level2--level3)
-- [API Models](#api-models)
+## Benchmark Overview
 
----
+<p align="center">
+  <img src="docs/assets/socialomni_overview.png" alt="SocialOmni Overview" width="100%" />
+</p>
 
-## Why V-SYNC
+### Dataset composition
 
-Most multimodal benchmarks test *what* a model understands. V-SYNC tests **when** it understands:
+- **2,209** total samples from **2,000** short dialogue videos
+- **Perception task**: 2,000 timestamp-level QA items
+- **Generation task**: 209 interruption-centric interaction items
+- **15** dialogue domains
+- Controlled A-V consistency split in perception task:
+  - **Consistent**: 86.25%
+  - **Inconsistent**: 13.75%
 
-- **Temporal binding**: can the model align the right voice with the right moment?
-- **Cross-stream dependency**: tasks are designed to be unsolvable by a single modality
-- **Native omni reasoning**: avoids post-hoc fusion; requires synchronized perception
+### Annotation quality
 
-If a model scores highly here, it is not just “multimodal” — it is **timing-aware**.
+- Two-round expert verification
+- Reported inter-annotator agreement (IAA):
+  - Perception: **94.2%**
+  - Generation: **91.8%**
 
----
+## Tasks
 
-## Design Philosophy
+### Task I: Perception (Who)
 
-V-SYNC is intentionally *diagnostic*, not purely benchmark-driven:
+Given a video and timestamp `t`, answer:
 
-- **Minimalist task surface**: simple question formats that directly probe synchronized understanding
-- **Single-modality insolubility**: audio-only or video-only reasoning should fail by design
-- **Temporal precision**: each instance is tied to a specific time window
-- **Evaluation as a pipeline**: server-first, config-driven, resume-friendly
+> "At timestamp `t`, who is speaking?"
 
----
+The model selects one option from `{A, B, C, D}`.
 
-## Benchmark Results
+### Task II: Generation (When + How)
 
-This repository includes the evaluation settings and datasets used in V-SYNC.
+Given video prefix `V[0:t]` and candidate speaker `X`, the model performs:
 
-| Model | Accuracy |
-|-------|----------|
-| Qwen3-Omni | 77.6% |
-| GPT-4o | 33.0% |
-| Gemini 2.5 Flash | 21.0% |
+- **Q1 (When)**: binary decision on whether `X` should interrupt immediately after `t`
+- **Q2 (How)**: if Q1 predicts interruption, generate natural interruption content
 
----
+## Evaluation Protocol
 
-## System Overview
+### Perception metrics
 
-![V-SYNC Overview](docs/assets/overview.png)
+- Top-1 Accuracy (overall)
+- Split-wise Accuracy on consistent/inconsistent subsets
+- Gap: `Δ = Acc_consistent - Acc_inconsistent`
 
+### Generation metrics
+
+- **Q1**: Accuracy / Precision / Recall / F1 under tolerance windows (e.g., δ=0.2s)
+- **Q2**: LLM-judge score on `{0, 25, 50, 75, 100}`
+
+Q2 uses three independent judges in the paper protocol:
+
+- GPT-4o
+- Gemini 3 Pro
+- Qwen3-Omni
+
+## Main Results (from paper table)
+
+| Model | Perception Overall (%) | Q1 Acc. (%) | Q2 Score (/100) |
+|---|---:|---:|---:|
+| Gemini 3 Pro Preview | 64.99 | **66.99** | 81.77 |
+| Qwen3-Omni | **69.25** | 63.64 | 45.57 |
+| Gemini 2.5 Flash | 47.03 | 58.85 | **85.08** |
+| GPT-4o | 36.75 | 46.89 | 69.64 |
+
+Observation: perception ranking and generation quality are not strictly aligned, supporting the need for joint who/when/how evaluation.
+
+## Repository Structure
+
+```text
+SocialOmni/
+├── models/                  # model servers, clients, and shared pipeline logic
+├── config/                  # runtime/model/benchmark configurations
+├── data/                    # local datasets (not tracked)
+├── results/                 # local outputs (not tracked)
+├── scripts/                 # utility scripts
+├── docs/                    # documentation and visual assets
+├── run_benchmark.py         # Task I (Level1) entrypoint
+├── run_benchmark_level2.py  # Task II (Level2) entrypoint
+└── README.md
 ```
-[Dataset + ASR] -> [Pipeline] -> [Model Client] -> [HTTP Server] -> [Omni Model]
-                         |                 |
-                         |                 +-- Local servers (Qwen/OmniVinci/MiniOmni2)
-                         +-- API clients (GPT-4o / Gemini)
-```
-
-- **Server-first**: local models are always accessed via HTTP
-- **Unified pipeline**: identical evaluation flow across local + API models
-- **Modality switch**: audio/video controls are centralized and consistent
-
----
 
 ## Quick Start
 
-### Prerequisites
-
-- Python >= 3.10
-- CUDA-compatible GPU (for local model serving)
-- uv package manager
+### 1) Clone and install
 
 ```bash
+git clone https://github.com/Alexisxty/SocialOmni.git
+cd SocialOmni
 uv sync
 ```
 
-### Configuration
+### 2) Configure runtime
 
-All settings live in `config/config.yaml`. Sensitive values go to `config/.env` or environment variables.
+Edit `config/config.yaml` and set at least:
 
-Key areas:
-- API keys / base URLs
-- model params (temperature / top_p / max_tokens)
-- model paths, GPU IDs, server_url
-- prompts and pipeline modality
+- API endpoints / keys (or env vars)
+- model paths / server URLs for local models
+- benchmark dataset paths and output paths
 
----
+Environment variable overrides are supported, e.g.:
 
-## Run Local Model Servers
+- `OPENAI_API_KEY` / `OPENAI_API_BASE`
+- `GEMINI_API_KEY` / `GEMINI_API_BASE`
 
-Each model exposes a single server entry (no unified/local inference scripts).
+### 3) Start local model server (example)
 
 ```bash
-uv run models/model_server/omnivinci/omnivinci_server.py
-uv run models/model_server/qwen2_5_omni/qwen_omni_server.py
 uv run models/model_server/qwen3_omni/qwen3_omni_server.py
-uv run models/model_server/qwen3_omni_thinking/qwen3_omni_thinking_server.py
-uv run models/model_server/miniomni_2/miniomni2_server.py
 ```
 
----
+Other server entrypoints are available under `models/model_server/*/*_server.py`.
 
-## Benchmark (Level1)
+### 4) Run benchmark
+
+Task I (Perception):
 
 ```bash
 uv run run_benchmark.py --model qwen3_omni
 ```
 
-If results exist, the runner will prompt for resume.
-
----
-
-## Modality Ablation
-
-`benchmark.level1.modality` in `config/config.yaml` controls inputs:
-
-- `avt`: audio + video (default)
-- `vt`: video only
-- `at`: audio only
-
-API models simulate this by sending frames and/or ASR text. Local models disable the corresponding inputs.
-
----
-
-## Configuration Map
-
-| Area | Key | Example |
-|------|-----|---------|
-| API | `api.openai.base_url` | `https://.../v1` |
-| API | `api.openai.api_key` | from `.env` |
-| Model | `models.<name>.model_path` | `/publicssd/...` |
-| Model | `models.<name>.gpu_ids` | `[6,7]` |
-| Model | `models.<name>.server_url` | `http://127.0.0.1:5091` |
-| Runtime | `runtime.max_retries` | `5` |
-| Runtime | `runtime.frame_interval_sec` | `1` |
-| Pipeline | `benchmark.level1.modality` | `avt / vt / at` |
-
----
-
-## Project Layout
-
-```
-V_SYNC/
-├── models/            # model servers, clients, shared utils
-├── data/              # datasets (local)
-├── tools/             # analysis / experiments / data tools (ignored in git)
-├── config/            # config + env
-├── results/           # outputs (local)
-├── docs/              # documentation
-├── run_benchmark.py   # Level1 runner
-├── run_benchmark_level2.py
-├── run_benchmark_level3.py
-└── README.md
-```
-
----
-
-## Level2 / Level3
-
-Entry points are prepared:
+Task II (Generation):
 
 ```bash
-uv run run_benchmark_level2.py --model qwen3_omni
-uv run run_benchmark_level3.py --model qwen3_omni
+uv run run_benchmark_level2.py --model qwen3_omni --resume
 ```
 
-Implement `models/pipeline/level2_pipeline.py` / `level3_pipeline.py` and export them in `models/pipeline/__init__.py` when ready.
+## Supported Model Keys
 
----
+Use these model keys with `--model`:
 
-## API Models
+`gpt4o`, `gemini_2_5_flash`, `gemini_2_5_pro`, `gemini_3_flash_preview`, `gemini_3_pro_preview`, `qwen3_omni`, `qwen3_omni_thinking`, `qwen2_5_omni`, `miniomni_2`, `omnivinci`, `vita_1_5`, `baichuan_omni_1_5`, `ming`
 
-For API models (GPT-4o / Gemini), configure:
+## Reproducibility Notes
 
-```
-OPENAI_API_BASE=...
-OPENAI_API_KEY=...
-```
-
-The OpenAI-compatible client reads these from `.env` or environment variables.
-
----
-
-## FAQ
-
-**Q: Does V-SYNC require both audio and video?**
-A: Yes, by design. The benchmark is built so single-modality reasoning fails. You can still run ablations via `modality`.
-
-**Q: Why server-first?**
-A: To standardize evaluation across local and API models and avoid hidden local-only behavior.
-
-**Q: Can I resume runs?**
-A: Yes. The runner detects existing result files and prompts for resume.
-
----
+- Keep data and output directories local and out of version control.
+- Use fixed prompts and model configs for cross-model comparison.
+- Report confidence intervals and split-wise metrics when claiming improvements.
 
 ## Citation
 
+If you use SocialOmni in research, please cite the paper:
+
 ```bibtex
-@misc{vsync2025,
-  title={V-SYNC: Perceiving When to Speak, A Diagnostic Benchmark for Omni Models},
-  author={Alexisxty},
-  year={2025},
-  url={https://github.com/Alexisxty/V-SYNC}
+@article{socialomni2026,
+  title={SocialOmni: Benchmarking Audio-Visual Social Interactivity in Omni Models},
+  author={Anonymous},
+  journal={ECCV},
+  year={2026}
 }
 ```
+
+(Please update this entry with the final camera-ready metadata.)
+
+## License and Data Usage
+
+- Code and benchmark protocol: see repository license (to be finalized)
+- Video assets and metadata follow source licensing constraints; use responsibly and comply with original licenses
+
+## Acknowledgment
+
+SocialOmni is motivated by the gap between understanding-centric evaluation and real conversational interaction requirements in omni models.

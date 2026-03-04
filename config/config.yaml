@@ -1,17 +1,17 @@
-# V-SYNC 全局配置（不写入敏感信息）
+# V-SYNC global config (do not store sensitive values)
 
 api:
   openai:
-    base_url: "https://api.aiserverai.online/v1"
+    base_url: ""
   gemini:
-    base_url: "https://api.aiserverai.online"
+    base_url: ""
 
 runtime:
   max_retries: 5
   request_delay: 0.0
   gpu_ids: []
   frame_interval_sec: 1
-  max_frames: 8
+  max_frames: null
 
 models:
   defaults:
@@ -28,6 +28,14 @@ models:
     temperature: 0.3
   gemini_2_5_pro:
     model_name: "gemini-2.5-pro"
+    max_tokens: 9000
+    temperature: 0.3
+  gemini_3_flash_preview:
+    model_name: "gemini-3-flash-preview"
+    max_tokens: 9000
+    temperature: 0.3
+  gemini_3_pro_preview:
+    model_name: "gemini-3-pro-preview"
     max_tokens: 9000
     temperature: 0.3
   qwen2_5_omni:
@@ -47,7 +55,7 @@ models:
     temperature: 0.3
     use_audio_in_video: true
     num_video_frames: 256
-    gpu_ids: [6, 7]
+    gpu_ids: [0, 1]
     host: "0.0.0.0"
     port: 5090
     judge_model_path: ""
@@ -59,7 +67,7 @@ models:
     temperature: 0.3
     use_audio_in_video: true
     num_video_frames: 256
-    gpu_ids: [3,4,5,6]
+    gpu_ids: [0,1,2,3]
     host: "0.0.0.0"
     port: 5091
     server_url: "http://127.0.0.1:5091"
@@ -70,7 +78,7 @@ models:
     top_p: 1.0
     use_audio_in_video: true
     num_video_frames: 1  # only 1 frame (miniomni_2 currently uses single-frame + audio)
-    gpu_ids: [6]
+    gpu_ids: [3]
     host: "0.0.0.0"
     port: 5092
     server_url: "http://127.0.0.1:5092"
@@ -80,7 +88,7 @@ models:
     max_new_tokens: 4096
     use_audio_in_video: true
     num_video_frames: 256
-    gpu_ids: [6, 7]
+    gpu_ids: [1, 2]
     host: "0.0.0.0"
     port: 5091
     server_url: "http://127.0.0.1:5091"
@@ -99,11 +107,22 @@ models:
     max_tokens: 256
     temperature: 0.3
     use_audio_in_video: false
-    # Baichuan-Omni 原生音频最大 30s（模型内限制），这里统一使用 ASR 文本输入
-    gpu_ids: [3, 4,5,6]
+    # Baichuan-Omni native audio is limited to 30s (model-side limit);
+    # use ASR text input consistently here.
+    gpu_ids: [0,1,2,3]
     host: "0.0.0.0"
     port: 5094
     server_url: "http://127.0.0.1:5094"
+    user_prompt: ""
+  ming:
+    model_path: "/publicssd/xty/models/Ming-flash-omni-2.0"
+    max_tokens: 256
+    temperature: 0.3
+    use_audio_in_video: false
+    gpu_ids: [0,1,2,3]
+    host: "0.0.0.0"
+    port: 5095
+    server_url: "http://127.0.0.1:5095"
     user_prompt: ""
 
 prompts:
@@ -117,7 +136,7 @@ benchmark:
     output_dir: ""
     output_pattern: "results_{model}_level1.json"
     log_dir: ""
-    modality: "avt"  # avt(音频+视频), vt(仅视频), at(仅音频)
+    modality: "avt"  # avt (audio+video), vt (video-only), at (audio-only)
     system_prompt: "You are a precise video-audio reasoning assistant. You must answer ONLY with the option letter (A, B, C, or D)."
     user_prompt: "Please carefully analyze the video, paying attention to the temporal relationship between the audio and visual content."
     max_retries: 5
@@ -133,6 +152,7 @@ benchmark:
     modality: "avt"
     system_prompt: ""
     user_prompt: ""
+    judge_model: "gpt4o"
     max_retries: 5
     retry_delay: 3
     num_workers: 8

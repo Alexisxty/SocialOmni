@@ -27,7 +27,7 @@ def _resolve_model_name(args: argparse.Namespace) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="V-SYNC Benchmark Runner")
+    parser = argparse.ArgumentParser(description="SocialOmni Benchmark Runner")
     parser.add_argument("--model", choices=sorted(CLIENTS.keys()))
     parser.add_argument("--max-samples", type=int, default=None)
     parser.add_argument("--start-index", type=int, default=0)

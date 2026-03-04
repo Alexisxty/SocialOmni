@@ -17,7 +17,7 @@ class Qwen3OmniClient:
         server_url = request.metadata.get("server_url") if request.metadata else None
         server_url = server_url or model_config.get("server_url") or os.getenv("QWEN3_OMNI_SERVER_URL")
         if not server_url:
-            raise ValueError("缺少 Qwen3-Omni server_url，请在 config/config.yaml 或环境变量中配置。")
+            raise ValueError("Missing Qwen3-Omni server_url. Please configure it in config/config.yaml or environment variables.")
 
         user_prompt = request.metadata.get("user_prompt") if request.metadata else None
         user_prompt = user_prompt or model_config.get("user_prompt")

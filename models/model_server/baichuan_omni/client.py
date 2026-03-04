@@ -83,7 +83,7 @@ class BaichuanOmni15Client:
         server_url = request.metadata.get("server_url") if request.metadata else None
         server_url = server_url or model_config.get("server_url") or os.getenv("BAICHUAN_OMNI_1_5_SERVER_URL")
         if not server_url:
-            raise ValueError("缺少 Baichuan-Omni-1.5 server_url，请在 config/config.yaml 或环境变量中配置。")
+            raise ValueError("Missing Baichuan-Omni-1.5 server_url. Please configure it in config/config.yaml or environment variables.")
 
         full_question = self._build_prompt(request)
 

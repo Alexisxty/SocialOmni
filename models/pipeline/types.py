@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 @dataclass(frozen=True)
 class InferenceRequest:
-    """统一推理请求结构。"""
+    """Unified inference request schema."""
 
     video_path: str
     question: str
@@ -16,7 +16,7 @@ class InferenceRequest:
 
 @dataclass(frozen=True)
 class InferenceResult:
-    """统一推理结果结构。"""
+    """Unified inference result schema."""
 
     answer: str
     raw_response: Optional[str] = None

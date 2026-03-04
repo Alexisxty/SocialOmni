@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
 
-# 在导入 torch 前设置 GPU 可见性
+# Set GPU visibility before importing torch
 PHYSICAL_GPUS = CONFIG.model("vita_1_5").get("gpu_ids", []) or CONFIG.runtime("gpu_ids", [])
 if PHYSICAL_GPUS:
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, PHYSICAL_GPUS))
@@ -31,7 +31,7 @@ if PHYSICAL_GPUS:
 os.environ.setdefault("VITA_DISABLE_AUDIO", "1")
 os.environ.setdefault("VITA_DELAY_VISION_TOWER", "1")
 
-# 全局配置
+# Global configuration
 MODEL_PATH = CONFIG.model("vita_1_5").get("model_path") or "/publicssd/xty/models/VITA-1.5"
 MODEL_BASE = None
 MODEL_TYPE = "qwen2p5_instruct"
@@ -43,7 +43,7 @@ NUM_BEAMS = 1
 MAX_FRAMES = None
 VIDEO_FRAMERATE = 1
 
-# 全局运行时对象
+# Global runtime objects
 model = None
 tokenizer = None
 image_processor = None
@@ -205,7 +205,7 @@ def _build_audio_placeholder():
 
 
 def run_inference(video_path, question):
-    assert model_loaded and model is not None, "模型未加载"
+    assert model_loaded and model is not None, "Model is not loaded"
 
     from vita.constants import DEFAULT_IMAGE_TOKEN, MAX_IMAGE_LENGTH, IMAGE_TOKEN_INDEX
     from vita.conversation import SeparatorStyle, conv_templates
@@ -293,19 +293,19 @@ def health_check():
 @app.route("/analyze", methods=["POST"])
 def analyze_video():
     if "video" not in request.files:
-        return jsonify({"error": "未上传视频文件"}), 400
+        return jsonify({"error": "Video file not uploaded"}), 400
 
     video_file = request.files["video"]
     if video_file.filename == "":
-        return jsonify({"error": "未选择文件"}), 400
+        return jsonify({"error": "No file selected"}), 400
 
     question = request.form.get("question", "")
     use_video = _parse_bool(request.form.get("use_video"), True)
     if not use_video:
-        return jsonify({"error": "VITA-1.5 仅支持视频输入"}), 400
+        return jsonify({"error": "VITA-1.5 only supports video input"}), 400
 
     if not question.strip():
-        return jsonify({"error": "问题不能为空"}), 400
+        return jsonify({"error": "Question cannot be empty"}), 400
 
     temp_dir = None
     temp_path = None
@@ -333,8 +333,8 @@ def analyze_video():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="VITA-1.5 Video Analysis Server")
-    parser.add_argument("--port", type=int, default=5093, help="服务器端口 (默认: 5093)")
-    parser.add_argument("--host", default="0.0.0.0", help="服务器主机地址 (默认: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=5093, help="Server port (default: 5093)")
+    parser.add_argument("--host", default="0.0.0.0", help="Server host address (default: 0.0.0.0)")
     return parser.parse_args()
 
 

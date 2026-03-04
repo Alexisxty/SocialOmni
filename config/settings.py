@@ -65,7 +65,9 @@ def _default_config() -> Dict[str, Any]:
                 "output_pattern": "results_{model}_level2.json",
                 "log_dir": "",
                 "modality": "avt",
+                "system_prompt": "",
                 "user_prompt": "",
+                "judge_model": "gpt4o",
                 "max_retries": 5,
                 "retry_delay": 3,
                 "num_workers": 8,
@@ -135,6 +137,24 @@ def _apply_env_overrides(config: Dict[str, Any]) -> None:
         config.setdefault("api", {}).setdefault("gemini", {})["api_key"] = gemini_key
     if gemini_base:
         config.setdefault("api", {}).setdefault("gemini", {})["base_url"] = gemini_base
+
+    runtime_frame_interval = os.getenv("V_SYNC_RUNTIME_FRAME_INTERVAL_SEC")
+    if runtime_frame_interval:
+        try:
+            config.setdefault("runtime", {})["frame_interval_sec"] = int(runtime_frame_interval)
+        except ValueError:
+            pass
+
+    runtime_max_frames = os.getenv("V_SYNC_RUNTIME_MAX_FRAMES")
+    if runtime_max_frames is not None and runtime_max_frames != "":
+        lowered = runtime_max_frames.strip().lower()
+        if lowered in {"none", "null", "-1"}:
+            config.setdefault("runtime", {})["max_frames"] = None
+        else:
+            try:
+                config.setdefault("runtime", {})["max_frames"] = int(runtime_max_frames)
+            except ValueError:
+                pass
 
 
 def load_config() -> Config:

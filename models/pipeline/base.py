@@ -7,17 +7,17 @@ from .types import InferenceRequest, InferenceResult
 
 
 class BasePipeline(ABC):
-    """所有模型适配器必须实现的统一接口。"""
+    """Unified interface that all model adapters must implement."""
 
     @property
     @abstractmethod
     def model_name(self) -> str:
-        """模型标识（用于日志/结果归档）。"""
+        """Model identifier (used for logs/result archiving)."""
 
     @abstractmethod
     def predict(self, request: InferenceRequest) -> InferenceResult:
-        """对单个样本进行推理。"""
+        """Run inference for a single sample."""
 
     def batch_predict(self, requests: Iterable[InferenceRequest]) -> list[InferenceResult]:
-        """默认批量推理（可被子类重写）。"""
+        """Default batch inference (can be overridden by subclasses)."""
         return [self.predict(req) for req in requests]

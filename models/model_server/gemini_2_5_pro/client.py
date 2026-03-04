@@ -11,22 +11,11 @@ class Gemini25ProClient:
         return "gemini_2_5_pro"
 
     def predict(self, request: InferenceRequest) -> InferenceResult:
+        # level1_pipeline already assembles ASR/options/answer_format into user_prompt; avoid duplicate assembly here.
         user_prompt = request.metadata.get("user_prompt") if request.metadata else None
-        asr_content = request.metadata.get("asr_content") if request.metadata else None
-        options = request.options or []
         use_video = True
         if request.metadata:
             use_video = bool(request.metadata.get("use_video", True))
-
-        prompt_parts = []
-        if user_prompt:
-            prompt_parts.append(user_prompt)
-        if asr_content:
-            prompt_parts.append(f"[ASR]\n{asr_content}")
-        if options:
-            prompt_parts.append("Options:\n" + "\n".join(options))
-        prompt_parts.append(CONFIG.prompt("answer_format"))
-        user_prompt = "\n\n".join(prompt_parts) if prompt_parts else None
 
         model_config = CONFIG.model("gemini_2_5_pro")
         model_name = model_config.get("model_name", "gemini-2.5-pro")

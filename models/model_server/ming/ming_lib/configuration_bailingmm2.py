@@ -1,0 +1,37 @@
+# coding=utf-8
+# Copyright 2024 ANT Group and the HuggingFace Inc. team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from transformers import PretrainedConfig
+from configuration_whisper_encoder import WhisperEncoderConfig
+from qwen3_moe_vit import Qwen3VLMoeVisionConfig
+from configuration_bailing_moe_v2 import BailingMoeV2Config
+
+
+class BailingMM2Config(PretrainedConfig):
+    model_type = "bailingmm_moe_v2_lite"
+
+    def __init__(
+        self,
+        mlp_depth=1,
+        llm_config: BailingMoeV2Config = None,
+        vision_config: Qwen3VLMoeVisionConfig = None,
+        audio_config: WhisperEncoderConfig = None,
+        **kwargs
+    ):
+        self.audio_config = WhisperEncoderConfig(**audio_config) if isinstance(audio_config, dict) else audio_config
+        self.vision_config = Qwen3VLMoeVisionConfig(**vision_config) if isinstance(vision_config, dict) else vision_config
+        self.llm_config = BailingMoeV2Config(**llm_config) if isinstance(llm_config, dict) else llm_config
+        self.mlp_depth = mlp_depth
+        super().__init__(**kwargs)

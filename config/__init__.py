@@ -1,4 +1,4 @@
-"""V-SYNC 配置与路径入口。"""
+"""V-SYNC configuration and path entrypoint."""
 
 from .paths import PATHS
 from .settings import CONFIG

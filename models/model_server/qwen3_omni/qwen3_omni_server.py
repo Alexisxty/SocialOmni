@@ -15,8 +15,8 @@ from flask import Flask, request, jsonify
 from config.settings import CONFIG
 from config.paths import PATHS
 
-# GPU配置 - 使用双卡H100（必须在导入transformers前设置）
-SPECIFIED_GPUS = CONFIG.model("qwen3_omni").get("gpu_ids", []) or CONFIG.runtime("gpu_ids", []) or [4, 5]  # 两张H100 80GB 显存
+# GPU configuration - use dual H100 cards (must be set before importing transformers).
+SPECIFIED_GPUS = CONFIG.model("qwen3_omni").get("gpu_ids", []) or CONFIG.runtime("gpu_ids", []) or [4, 5]  # Two H100 80GB GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, SPECIFIED_GPUS))
 
 from transformers import Qwen3OmniMoeForConditionalGeneration, Qwen3OmniMoeProcessor
@@ -37,12 +37,12 @@ if not logger.handlers:
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-# 全局配置
+# Global configuration
 MODEL_PATH = CONFIG.model("qwen3_omni").get("model_path") or "/publicssd/xty/models/Qwen3-Omni-30B-A3B-Instruct"
 USE_AUDIO_IN_VIDEO = CONFIG.model("qwen3_omni").get("use_audio_in_video", True)
 MAX_TOKENS = CONFIG.model("qwen3_omni").get("max_tokens", 50)
 
-# 全局变量
+# Global variables
 model = None
 processor = None
 model_loaded = False
@@ -60,23 +60,23 @@ def _parse_bool(value, default=True):
 
 
 def load_model():
-    """加载模型到指定的双GPU"""
+    """Load model onto specified dual GPUs"""
     global model, processor, model_loaded
 
     if model_loaded:
         return
 
     try:
-        # 设置使用指定的两张GPU
+        # Use the two specified GPUs
         os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, SPECIFIED_GPUS))
 
-        print(f"Loading model到GPU {SPECIFIED_GPUS}...")
+        print(f"Loading model on GPU {SPECIFIED_GPUS}...")
 
         ensure_qwen3_omni_config_compat()
-        # 使用 transformers 加载模型（自动优化，跨双卡分布）
+        # Load model with transformers (auto-optimized, distributed across two GPUs)
         model = Qwen3OmniMoeForConditionalGeneration.from_pretrained(
             MODEL_PATH,
-            device_map="auto",  # 自动在多GPU间分配
+            device_map="auto",  # Automatically distribute across multiple GPUs
             dtype='auto'
         )
 
@@ -89,7 +89,7 @@ def load_model():
 
 
 def build_conversation(video_path, question):
-    """构建对话格式"""
+    """Build conversation format"""
     return [
         {
             "role": "user",
@@ -102,14 +102,14 @@ def build_conversation(video_path, question):
 
 
 def process_video_analysis(video_path, question, use_video, use_audio):
-    """处理视频分析"""
+    """Process video analysis"""
     global model, processor
     use_audio_in_video = USE_AUDIO_IN_VIDEO and use_audio
 
-    # 构建对话
+    # Build conversation
     messages = build_conversation(video_path, question)
 
-    # 准备输入
+    # Prepare inputs
     text = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
     audios, images, videos = process_mm_info(messages, use_audio_in_video=use_audio_in_video)
     if not use_audio:
@@ -129,7 +129,7 @@ def process_video_analysis(video_path, question, use_video, use_audio):
     )
     inputs = inputs.to(model.device).to(model.dtype)
 
-    # 推理
+    # Inference
     result = model.generate(
         **inputs,
         thinker_return_dict_in_generate=True,
@@ -160,7 +160,7 @@ def process_video_analysis(video_path, question, use_video, use_audio):
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """健康检查接口"""
+    """Health check endpoint"""
     return jsonify({
         "status": "ok",
         "model_loaded": model_loaded,
@@ -170,39 +170,39 @@ def health_check():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_video():
-    """分析视频接口 - 只支持文件上传方式"""
+    """Analyze video endpoint - file upload only"""
     global model, processor
 
     if not model_loaded:
-        return jsonify({"error": "模型未加载"}), 500
+        return jsonify({"error": "Model is not loaded"}), 500
 
     temp_dir = None
     temp_path = None
 
     try:
-        # 只支持文件上传方式
+        # File upload only
         if 'video' not in request.files:
-            return jsonify({"error": "未上传视频文件"}), 400
+            return jsonify({"error": "Video file not uploaded"}), 400
 
         video_file = request.files['video']
         if video_file.filename == '':
-            return jsonify({"error": "未选择文件"}), 400
+            return jsonify({"error": "No file selected"}), 400
 
         question = request.form.get('question', '')
         use_video = _parse_bool(request.form.get("use_video"), True)
         use_audio = _parse_bool(request.form.get("use_audio"), USE_AUDIO_IN_VIDEO)
         if not question.strip():
-            return jsonify({"error": "问题不能为空"}), 400
+            return jsonify({"error": "Question cannot be empty"}), 400
 
-        # 保存上传的文件到临时目录
+        # Save uploaded file to temporary directory
         temp_dir = tempfile.mkdtemp()
         temp_path = os.path.join(temp_dir, video_file.filename)
         video_file.save(temp_path)
 
-        # 处理视频分析
+        # Process video analysis
         answer = process_video_analysis(temp_path, question, use_video, use_audio)
 
-        # 简化的响应格式
+        # Simplified response format
         return jsonify({
             "status": "success",
             "answer": answer.strip()
@@ -217,7 +217,7 @@ def analyze_video():
         }), 500
 
     finally:
-        # 清理临时文件
+        # Clean temporary files
         try:
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
@@ -228,7 +228,7 @@ def analyze_video():
 
 
 def parse_args():
-    """解析命令行参数"""
+    """Parse command-line arguments"""
     default_host = CONFIG.model("qwen3_omni").get("host") or "127.0.0.1"
     default_port = CONFIG.model("qwen3_omni").get("port") or 5090
     parser = argparse.ArgumentParser(description="Qwen3 Omni Video Analysis Server")
@@ -236,23 +236,23 @@ def parse_args():
         "--port",
         type=int,
         default=default_port,
-        help="服务器端口 (默认: 5090)"
+        help="Server port (default: 5090)"
     )
     parser.add_argument(
         "--host",
         default=default_host,
-        help="服务器主机地址 (默认: 127.0.0.1)"
+        help="Server host address (default: 127.0.0.1)"
     )
     return parser.parse_args()
 
 
 if __name__ == '__main__':
-    # 解析命令行参数
+    # Parse command-line arguments
     args = parse_args()
 
-    # 启动时加载模型
+    # Load model on startup
     load_model()
 
-    # 启动服务器
+    # Start server
     print(f"Starting server: {args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False)

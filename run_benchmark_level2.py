@@ -37,10 +37,11 @@ def _load_level2_pipeline():
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="V-SYNC Benchmark Runner (Level2)")
+    parser = argparse.ArgumentParser(description="SocialOmni Benchmark Runner (Level2)")
     parser.add_argument("--model", choices=sorted(CLIENTS.keys()))
     parser.add_argument("--max-samples", type=int, default=None)
     parser.add_argument("--start-index", type=int, default=0)
+    parser.add_argument("--resume", action="store_true", help="Resume from existing output without interactive prompt")
     args = parser.parse_args()
 
     model_name = _resolve_model_name(args)
@@ -48,7 +49,9 @@ def main() -> None:
 
     Level2Pipeline, default_level2_config = _load_level2_pipeline()
     config = default_level2_config(test.model_name)
-    if config.output_path.exists():
+    if args.resume and config.output_path.exists():
+        config = replace(config, resume=True)
+    elif config.output_path.exists():
         answer = input(f"Existing results found: {config.output_path}. Resume? (y/N) ").strip().lower()
         if answer in {"y", "yes"}:
             config = replace(config, resume=True)
@@ -60,7 +63,11 @@ def main() -> None:
         )
 
     pipeline = Level2Pipeline(test, config)
-    pipeline.run()
+    try:
+        pipeline.run()
+    except KeyboardInterrupt:
+        print("\n[STOP] User interrupted Level2 benchmark.")
+        raise SystemExit(130)
 
 
 if __name__ == "__main__":

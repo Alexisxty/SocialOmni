@@ -9,7 +9,7 @@ _REGISTRY: Dict[str, Type[BasePipeline]] = {}
 
 
 def register(name: str):
-    """注册模型适配器。"""
+    """Register a model adapter."""
     def _wrap(cls: Type[BasePipeline]) -> Type[BasePipeline]:
         if name in _REGISTRY:
             raise ValueError(f"Model '{name}' already registered")

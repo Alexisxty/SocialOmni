@@ -8,8 +8,8 @@ if str(ROOT) not in sys.path:
 
 from config.settings import CONFIG
 
-# GPU configuration - Must be set before importing torch/transformers / 必须在导入torch/transformers之前设置
-SPECIFIED_GPUS = CONFIG.model("qwen3_omni_thinking").get("gpu_ids", []) or CONFIG.runtime("gpu_ids", []) or [5, 6, 7]  # Four H100 80GB cards / 四张H100 80GB 显存
+# GPU configuration - must be set before importing torch/transformers.
+SPECIFIED_GPUS = CONFIG.model("qwen3_omni_thinking").get("gpu_ids", []) or CONFIG.runtime("gpu_ids", []) or [5, 6, 7]  # Four H100 80GB cards
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, SPECIFIED_GPUS))
 
 import tempfile
@@ -37,12 +37,12 @@ if not logger.handlers:
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-# Global configuration / 全局配置
+# Global configuration / Global configuration
 MODEL_PATH = CONFIG.model("qwen3_omni_thinking").get("model_path") or "/publicssd/xty/models/Qwen3-Omni-30B-A3B-Thinking"
 USE_AUDIO_IN_VIDEO = CONFIG.model("qwen3_omni_thinking").get("use_audio_in_video", True)
-MAX_TOKENS = CONFIG.model("qwen3_omni_thinking").get("max_tokens", 8192)  # Large token limit for extended CoT reasoning / 为扩展的思考链推理提供大token限制
+MAX_TOKENS = CONFIG.model("qwen3_omni_thinking").get("max_tokens", 8192)  # Large token limit for extended CoT inference
 
-# Global variables / 全局变量
+# Global variables / Global variables
 model = None
 processor = None
 model_loaded = False
@@ -60,7 +60,7 @@ def _parse_bool(value, default=True):
 
 
 def load_model():
-    """Load model to specified GPUs / 加载模型到指定的GPU"""
+    """Load model to specified GPUs."""
     global model, processor, model_loaded
 
     if model_loaded:
@@ -87,7 +87,7 @@ def load_model():
 
 
 def build_conversation(video_path, question):
-    """Build conversation format / 构建对话格式"""
+    """Build conversation format / Build conversation format"""
     return [
         {
             "role": "user",
@@ -100,7 +100,7 @@ def build_conversation(video_path, question):
 
 
 def process_video_analysis(video_path, question, use_video, use_audio):
-    """Process video analysis / 处理视频分析"""
+    """Process video analysis / Process video analysis"""
     global model, processor
     use_audio_in_video = USE_AUDIO_IN_VIDEO and use_audio
 
@@ -159,7 +159,7 @@ def process_video_analysis(video_path, question, use_video, use_audio):
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint / 健康检查接口"""
+    """Health check endpoint / Health check endpoint"""
     return jsonify({
         "status": "ok",
         "model_loaded": model_loaded,
@@ -170,7 +170,7 @@ def health_check():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_video():
-    """Video analysis endpoint - File upload only / 分析视频接口 - 只支持文件上传方式"""
+    """Video analysis endpoint - File upload only / Analyze video endpoint - file upload only"""
     global model, processor
 
     if not model_loaded:
@@ -228,7 +228,7 @@ def analyze_video():
 
 
 def parse_args():
-    """Parse command line arguments / 解析命令行参数"""
+    """Parse command line arguments / Parse command-line arguments"""
     default_host = CONFIG.model("qwen3_omni_thinking").get("host") or "127.0.0.1"
     default_port = CONFIG.model("qwen3_omni_thinking").get("port") or 5091
     parser = argparse.ArgumentParser(description="Qwen3-Omni-Thinking Video Analysis Server")
